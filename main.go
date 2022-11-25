@@ -32,7 +32,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer DB.Close()
+	//defer DB.Close()
+	defer func(DB *gorm.DB) {
+		err := DB.Close()
+		if err != nil {
+			return
+		}
+	}(DB)
 
 	DB.AutoMigrate(&Todo{})
 
@@ -49,7 +55,11 @@ func main() {
 	// ADD
 	v1Group.POST("todo", func(c *gin.Context) {
 		var todo Todo
-		c.BindJSON(&todo)
+		//c.BindJSON(&todo)
+		err := c.BindJSON(&todo)
+		if err != nil {
+			return
+		}
 
 		if err = DB.Create(&todo).Error; err != nil {
 			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
@@ -86,7 +96,11 @@ func main() {
 			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
 			return
 		}
-		c.BindJSON(&todo)
+		//c.BindJSON(&todo)
+		err := c.BindJSON(&todo)
+		if err != nil {
+			return
+		}
 		if err = DB.Save(&todo).Error; err != nil {
 			c.JSON(http.StatusOK, gin.H{"error": err.Error()})
 		} else {
@@ -109,5 +123,8 @@ func main() {
 
 	})
 
-	r.Run()
+	err = r.Run()
+	if err != nil {
+		return
+	}
 }
